@@ -3,6 +3,13 @@ if (process.argv.length !== 3) {
   process.exit(1);
 }
 
+var terminate = false;
+process.on('SIGINT', function() {
+  if (terminate) process.exit(0); // If pressed twice.
+  console.log('Got SIGINT.  Please wait while the current task finished.');
+  terminate = true;
+});
+
 var eventEmitter = require('events').EventEmitter,
     ee = new eventEmitter,
     redis = require("redis"),
@@ -24,18 +31,20 @@ nextTask();
 
 
 function nextTask () {
-  console.log('Getting next task');
   client.lrange(processing_queue, 0, 0, function (err, tasks) {
     if ( tasks.length > 0 ) {
       currentTask = tasks[0];
       console.log('Resumed task: ' + currentTask);
       ee.emit('task_found');
+    } else if (terminate) {
+      console.log('Exiting.')
+      process.exit(0);
     } else {
       console.log('Wating for new task on ' + work_queue);
       client.brpoplpush (work_queue, processing_queue, timeout, function (err, task) {
         if (task) { // In case timeout is set to a value
           currentTask = task;
-          console.log('Found task: ' + currentTask);
+          console.log('Picked task: ' + currentTask);
           ee.emit('task_found');
         }
       });
@@ -57,7 +66,6 @@ function processTask () {
 }
 
 function removeTask () {
-  console.log('Removing task: ' + currentTask);
   client.lrem (processing_queue, -1, currentTask, function (err, result) {
     if (err || result !== 1) {
       throw new Error('Error when LREM from processing_queue ' + processing_queue);
