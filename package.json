@@ -1,0 +1,13 @@
+{
+  "name": "BerlingskeMQ",
+  "description": "Berlingske Messase Queue",
+  "author": "Berlingske Media",
+  "version": "0.0.1",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js"
+  },
+  "dependencies": {
+    "redis": "~0.10.3"
+  }
+}
