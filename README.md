@@ -3,7 +3,7 @@ BerlingskeMQ
 
 A simple message queue implemented in Node using Redis.
 
-A producer inserts a message into a list called e.g. "work" using LPUSH. This producer could be our other Node.js API application.
+A producer inserts a message into a work queue (Redis list) called e.g. "work" using LPUSH. This producer could be our other Node.js API application.
 
 ```sh
 redis> LPUSH work "task 1"
@@ -18,14 +18,13 @@ redis> LRANGE work 0 -1
 3) "task 1"
 ```
 
-The `producer.js` is a sample script that generates 100 tasks and pushed them into the list.
+The file `producer.js` is a sample script that generates 100 tasks and pushed them into the work queue.
 
 To process the messages in the queue, we start a worker by calling `node worker.js worker1`
+
 Note: The third command argument is the id of the worker.
 
-The worker polls the work queue by executing the blocking command `BRPOPLPUSH`.
-BRPOPLPUSH atomically returns and removes the last task (tail) from the work queue, and pushes it to it's own "processing queue".
-Then the worker starts to process the task by findind the correct method for processing.
+The worker polls the work queue by executing the blocking command `BRPOPLPUSH` that atomically returns and removes the last task (tail) from the work queue, and pushes it to it's own "processing queue". By doing it atomically, it ensures that only one worker receives the task.
 
 ```sh
 redis> BRPOPLPUSH work worker1-queue 0
@@ -40,7 +39,8 @@ redis> LRANGE work 0 -1
 1) "task 3"
 ```
 
-After processeing has finished, the task is removed from the workers processing queue (`LREM`) and the cycle repeats itself.
+Now the worker starts to process the task by finding and executing the correct method for processing.
+After processing has finished, the task is removed from the workers processing queue (command `LREM`).
 
 ```sh
 redis> LREM worker1-queue -1 'task 1'
@@ -48,6 +48,8 @@ redis> LREM worker1-queue -1 'task 1'
 redis> LRANGE worker1-queue 0 -1
 (empty list or set)
 ```
+Now the cycle repeats itself by executing the blocking `BRPOPLPUSH`.
 
-When starting a worker, it resumes any (unfinished) tasks in it's processing queue before fetching a new task from the global work queue.
-If the worker is terminated with a `SIGINT`, all tasks in the processing queue is finished before the process is terminated. This is to avoid tasks that needs to be resumed.
+If the worker is terminated with a `SIGINT`, all tasks in the processing queue is finished before the process is terminated. This is to avoid tasks left in the processing queue that needs to be resumed.
+Furthermore, when starting a worker, it resumes any unfinished tasks in it's processing queue before fetching a new task from the global work queue.
+
