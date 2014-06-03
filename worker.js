@@ -6,7 +6,7 @@ var errors = [],
     warnings = [];
 
 if (process.argv.length !== 3) {
-  errors.push(new Error('Missing argument for worker id.'));
+  errors.push('Missing argument for worker id.');
 }
 
 if (process.env.REDIS_PORT === undefined) {
@@ -19,16 +19,14 @@ if (process.env.REDIS_HOST === undefined) {
 
 
 if (warnings.length > 0) {
-  console.log('\Warnings:');
   for (var i = warnings.length - 1; i >= 0; i--) {
-    console.log('  ' + warnings[i]);
+    console.warn('Warning: ' + warnings[i]);
   }
 }
 
 if (errors.length > 0) {
-  console.log('\nErrors:');
   for (var i = errors.length - 1; i >= 0; i--) {
-    console.log('  ' + errors[i]);
+    console.error('Error: ' + errors[i]);
   }
   process.exit(1);
 }
