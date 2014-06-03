@@ -38,7 +38,7 @@ var eventEmitter = require('events').EventEmitter,
     redis = require("redis"),
     work_queue = 'work',
     os = require('os'),
-    processing_queue = os.hostname() + '-' + process.argv[2],
+    processing_queue = os.hostname() + '-' + process.argv[2] + '-queue',
     currentTask = null,
     terminate = false;
 

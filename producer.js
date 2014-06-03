@@ -26,7 +26,7 @@ function pushNextTask () {
 }
 
 function pushTask (task) {
-  client.rpush (work_queue, task, function (err, result) {
+  client.lpush (work_queue, task, function (err, result) {
     if (err) {
       console.log('Error: ' + err);
     }
