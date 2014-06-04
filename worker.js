@@ -47,7 +47,7 @@ var eventEmitter = require('events').EventEmitter,
 var client = process.env.REDIS_PORT && process.env.REDIS_HOST ?
     redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST) :
     redis.createClient();
-    
+
 process.on('SIGINT', function() {
   if (exiting || canExit) process.exit(0); // If pressed twice.
   console.log('Received SIGINT.  Please wait until the current task is finished.');
@@ -65,7 +65,7 @@ var walk = function (path) {
     var fullPath = path + '/' + file;
     var stat = fs.statSync(fullPath);
     if (stat.isFile() && /(.*)\.(js$)/.test(file)) {
-      require(fullPath)(handlerEmitter);
+      require(fullPath)(handlerEmitter, client);
     }
   });
 };
