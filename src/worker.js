@@ -34,8 +34,8 @@ if (errors.length > 0) {
 
 var eventEmitter = require('events').EventEmitter,
     fs = require('fs'),
-    workerEmitter = new eventEmitter,
-    handlerEmitter = new eventEmitter,
+    workerEmitter = new eventEmitter(),
+    handlerEmitter = new eventEmitter(),
     redis = require("redis"),
     work_queue = 'work',
     error_queue = 'error',
@@ -92,7 +92,7 @@ function nextTask () {
       console.log('Resumed task: ' + tasks[0]);
       workerEmitter.emit('task_found', tasks[0]);
     } else if (exiting) {
-      console.log('Exiting.')
+      console.log('Exiting.');
       process.exit(0);
     } else {
       console.log('Wating for new task on ' + work_queue);
@@ -106,7 +106,7 @@ function nextTask () {
       });
     }
   });
-};
+}
 
 
 function processTask (task) {

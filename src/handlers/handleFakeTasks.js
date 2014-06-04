@@ -1,13 +1,8 @@
 module.exports = function (eventEmitter) {
   eventEmitter.addListener('faketask', handleFakeTasks);
-}
+};
 
 function handleFakeTasks (task, done) {
-
-  if (!task.indexOf('task') > 0){
-    return done();
-  }
-
   var random = randomIntFromInterval(1, 30);
   if (random === 1) {
     console.log('FAKE SHUTDOWN when processing random ' + random);

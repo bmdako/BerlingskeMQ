@@ -24,6 +24,13 @@ gulp.task('start', function() {
   node = spawn('node', ['./src/worker.js', workerid], {stdio: 'inherit'});
 });
 
+gulp.task('produce', function() {
+  if (node) {
+    node.kill();
+  }
+  node = spawn('node', ['./src/producer.js'], {stdio: 'inherit'});
+});
+
 var node_inspector;
 gulp.task('debug', function() {
   if (node) {

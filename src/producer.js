@@ -1,5 +1,5 @@
 var eventEmitter = require('events').EventEmitter,
-    ee = new eventEmitter,
+    ee = new eventEmitter(),
     redis = require("redis"),
     url = require('url'),
     client = redis.createClient(),
@@ -18,7 +18,7 @@ function generateFakeTasks (amount) {
   var tasks = [];
   for (var i = 1; i <= amount; i++) {
     tasks.push('faketask: task ' + i);
-  };
+  }
   return tasks;
 }
 

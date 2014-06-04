@@ -4,36 +4,42 @@ var client;
 module.exports = function (eventEmitter, redis_client) {
   client = redis_client;
   eventEmitter.addListener('update', callWebhooks);
-}
+};
+
+var body;
+
+//ee.on ('webhook_found', sendRequest);
 
 function callWebhooks (task, done) {
   console.log('Finding webhooks for ' + task);
   var args = task.split(':');
+  var article = {'test':'test'}; // TODO perhaps?
+  body = article ? JSON.stringify(article) : '';
 
   client.SMEMBERS (args[1] + ':webhooks', function (err, webhooks) {
+    
     var calledWebhooksCount = 0;
-    for (var i = webhooks.length - 1; i >= 0; i--) {
-      getWebhook(webhooks[i], function (webhook) {
-        var article = null; // TODO
-        var body = article ? JSON.stringify(article) : '';
-        sendRequest(webhook, body);
 
-        ++calledWebhooksCount;
-        if (calledWebhooksCount === webhooks.length) {
-          done();
-        }
-      });
-    };
+    for (var i = webhooks.length - 1; i >= 0; i--) {
+      
+      getWebhook(webhooks[i], sendRequest);
+
+      ++calledWebhooksCount;
+      if (calledWebhooksCount === webhooks.length) {
+        done();
+      }
+    }
   });
 }
 
 function getWebhook (webhookName, callback) {
-  client.HGETALL(webhookName, function (err, webhook) {
+  client.HGETALL (webhookName, function (err, webhook) {
     callback(webhook);
+    //ee.emit('webhook_found', webhook);
   });
 }
 
-function sendRequest (webhook, body) {
+function sendRequest (webhook) {
 
   var options = {
     hostname: webhook.hostname,
