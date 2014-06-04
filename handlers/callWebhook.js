@@ -1,40 +1,58 @@
 var http = require('http');
+var client;
 
-module.exports = function (eventEmitter) {
-  eventEmitter.addListener('webhook', callWebhook);
+module.exports = function (eventEmitter, redis_client) {
+  client = redis_client;
+  eventEmitter.addListener('update', callWebhooks);
 }
 
-function callWebhook (task, done) {
+function callWebhooks (task, done) {
+  console.log('Finding webhooks for ' + task);
+  var args = task.split(':');
+
+  client.SMEMBERS (args[1] + ':webhooks', function (err, webhooks) {
+    var calledWebhooksCount = 0;
+    for (var i = webhooks.length - 1; i >= 0; i--) {
+      getWebhook(webhooks[i], function (webhook) {
+        var article = null; // TODO
+        var body = article ? JSON.stringify(article) : '';
+        sendRequest(webhook, body);
+
+        ++calledWebhooksCount;
+        if (calledWebhooksCount === webhooks.length) {
+          done();
+        }
+      });
+    };
+  });
+}
+
+function getWebhook (webhookName, callback) {
+  client.HGETALL(webhookName, function (err, webhook) {
+    callback(webhook);
+  });
+}
+
+function sendRequest (webhook, body) {
 
   var options = {
-    hostname: 'requestb.in',
-    port: 80,
-    path: '/vkjnfavk',
+    hostname: webhook.hostname,
+    port: webhook.port && webhook.port !== 'null' ? webhook.port : 80, // Using url.parse() return 'null' as a string when no value
+    path: webhook.path,
     method: 'POST',
     headers: {
-      'Content-Length': 0
+      'Content-Length': Buffer.byteLength(body, 'utf8')
     }
   };
 
-  var req = http.request(options, function(res) {
-    console.log('STATUS: ' + res.statusCode);
-    console.log('HEADERS: ' + JSON.stringify(res.headers));
-    res.setEncoding('utf8');
-    res.on('data', function (chunk) {
-      console.log('BODY: ' + chunk);
-    });
-    res.on('end', function () {
-      done();
-    });
-  });
+  // We simply fire off the request and don't wait for a response.
+  var req = http.request(options);
 
   req.on('error', function(e) {
     console.log('problem with request: ' + e.message);
-    done();
+    //callback(e, null);
   });
 
-  // write data to request body
-  req.write('data\n');
-  req.write('data\n');
+  req.write(body);
   req.end();
 }
