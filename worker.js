@@ -85,7 +85,7 @@ workerEmitter.emit('start'); // Start
 
 
 function nextTask () {
-  client.lrange (processing_queue, 0, 0, function (err, tasks) {
+  client.LRANGE (processing_queue, 0, 0, function (err, tasks) {
     if ( tasks.length > 0 ) {
       canExit = false;
       console.log('Resumed task: ' + tasks[0]);
@@ -96,7 +96,7 @@ function nextTask () {
     } else {
       console.log('Wating for new task on ' + work_queue);
       canExit = true;
-      client.brpoplpush (work_queue, processing_queue, 0, function (err, task) {
+      client.BRPOPLPUSH (work_queue, processing_queue, 0, function (err, task) {
         canExit = false;
         if (task) { // In case timeout is set to a value
           console.log('Picked task: ' + task);
@@ -129,7 +129,7 @@ function processTask (task) {
 }
 
 function pushTask (task) {
-  client.lpush (skipped_queue, task, function (err, result) {
+  client.LPUSH (skipped_queue, task, function (err, result) {
     if (err) {
       throw new Error('Error when LREM from processing_queue ' + processing_queue + ': ' + err);
     } else {
@@ -144,7 +144,7 @@ function handleError (task) {
 }
 
 function removeTask (task) {
-  client.lrem (processing_queue, -1, task, function (err, result) {
+  client.LREM (processing_queue, -1, task, function (err, result) {
     if (err) {
       throw new Error('Error when LREM from processing_queue ' + processing_queue + ': ' + err);
     } else {
