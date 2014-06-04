@@ -8,8 +8,6 @@ module.exports = function (eventEmitter, redis_client) {
 
 var body;
 
-//ee.on ('webhook_found', sendRequest);
-
 function callWebhooks (task, done) {
   console.log('Finding webhooks for ' + task);
   var args = task.split(':');
@@ -35,7 +33,6 @@ function callWebhooks (task, done) {
 function getWebhook (webhookName, callback) {
   client.HGETALL (webhookName, function (err, webhook) {
     callback(webhook);
-    //ee.emit('webhook_found', webhook);
   });
 }
 
