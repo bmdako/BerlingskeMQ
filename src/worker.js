@@ -33,7 +33,6 @@ if (errors.length > 0) {
 
 
 var eventEmitter = require('events').EventEmitter,
-    os = require('os'),
     fs = require('fs'),
     workerEmitter = new eventEmitter,
     handlerEmitter = new eventEmitter,
@@ -41,7 +40,8 @@ var eventEmitter = require('events').EventEmitter,
     work_queue = 'work',
     error_queue = 'error',
     skipped_queue = 'skipped',
-    processing_queue = os.hostname() + '-' + process.argv[2] + '-queue',
+    workerid = process.argv[2],
+    processing_queue = workerid + '-queue',
     exiting = false,
     canExit = true;
 
@@ -56,6 +56,7 @@ process.on('SIGINT', function() {
   console.log('Received SIGINT.  Please wait until the current task is finished. Or one more to force exit.');
   exiting = true;
 });
+
 
 // Setting up all the handlers
 var walk = function (path) {
@@ -79,7 +80,7 @@ workerEmitter.on('task_skipped', pushTask);
 
 
 
-console.log('Starting worker ' + processing_queue);
+console.log('Starting worker ' + workerid);
 workerEmitter.emit('start'); // Start
 
 

@@ -3,11 +3,19 @@
   "description": "Berlingske Messase Queue",
   "author": "Berlingske Media",
   "version": "0.0.1",
-  "main": "worker.js",
+  "main": "src/worker.js",
   "scripts": {
-    "start": "node worker.js"
+    "start": "node src/worker.js"
   },
   "dependencies": {
     "redis": "~0.10.3"
+  },
+  "devDependencies": {
+    "gulp": "~3.6.2",
+    "gulp-jshint": "~1.5.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bmdako/BerlingskeMQ"
   }
 }
