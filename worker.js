@@ -32,16 +32,22 @@ if (errors.length > 0) {
 }
 
 var eventEmitter = require('events').EventEmitter,
+    os = require('os'),
+    fs = require('fs'),
     ee = new eventEmitter,
+    handlerEmitter = new eventEmitter,
     redis = require("redis"),
     work_queue = 'work',
     error_queue = 'error',
     skipped_queue = 'skipped',
-    os = require('os'),
     processing_queue = os.hostname() + '-' + process.argv[2] + '-queue',
     exiting = false,
     canExit = true;
 
+var client = process.env.REDIS_PORT && process.env.REDIS_HOST ?
+    redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST) :
+    redis.createClient();
+    
 process.on('SIGINT', function() {
   if (exiting || canExit) process.exit(0); // If pressed twice.
   console.log('Received SIGINT.  Please wait until the current task is finished.');
@@ -52,12 +58,18 @@ ee.on('task_found', processTask);
 ee.on('task_processed', removeTask);
 ee.on('task_finished', nextTask);
 ee.on('task_skipped', pushTask);
-ee.addListener('task_handle', require('./handlers/handleFakeTasks.js'));
 
 
-var client = process.env.REDIS_PORT && process.env.REDIS_HOST ?
-    redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST) :
-    redis.createClient();
+var walk = function (path) {
+  fs.readdirSync(path).forEach(function(file) {
+    var fullPath = path + '/' + file;
+    var stat = fs.statSync(fullPath);
+    if (stat.isFile() && /(.*)\.(js$)/.test(file)) {
+      require(fullPath)(handlerEmitter);
+    }
+  });
+};
+walk(__dirname + '/handlers');
 
 
 console.log('Starting worker ' + processing_queue);
@@ -89,16 +101,17 @@ function nextTask () {
 
 
 function processTask (task) {
-  console.log('Processing task: ' + task);
-  var task_handle_event = 'task_handle1';
-  var activeListeners = eventEmitter.listenerCount(ee, task_handle_event);
+  var task_handle_event = task.substring(0, task.indexOf(':',0));
+  console.log('Processing task: ' + task + ' (type ' + task_handle_event + ')');
 
-  if (activeListeners > 0) {
-    var completedListeners = 0;
+  var activeHandlersCount = eventEmitter.listenerCount(handlerEmitter, task_handle_event);
 
-    ee.emit(task_handle_event, task, function () {
-      ++completedListeners;
-      if (completedListeners === activeListeners) {
+  if (activeHandlersCount > 0) {
+    var completedHandlersCount = 0;
+
+    handlerEmitter.emit(task_handle_event, task, function () {
+      ++completedHandlersCount;
+      if (completedHandlersCount === activeHandlersCount) {
         ee.emit('task_processed', task);
       }
     });

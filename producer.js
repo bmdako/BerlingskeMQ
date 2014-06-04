@@ -8,13 +8,13 @@ var eventEmitter = require('events').EventEmitter,
 ee.on('task_pushed', pushNextTask);
 
 var pushedTasks = 0;
-var tasks = generateTasks(100);
+var tasks = generateFakeTasks(100);
 pushNextTask();
 
-function generateTasks (amount) {
+function generateFakeTasks (amount) {
   var tasks = [];
   for (var i = 1; i <= amount; i++) {
-    tasks.push('task ' + i);
+    tasks.push('faketask: task ' + i);
   };
   return tasks;
 }
@@ -33,4 +33,8 @@ function pushTask (task) {
     console.log('Pushed ' + task);
     ee.emit('task_pushed');
   });
+}
+
+function setupWebhook () {
+  //http://requestb.in/vkjnfavk
 }
