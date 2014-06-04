@@ -8,7 +8,6 @@ function handleFakeTasks (task, done) {
     return done();
   }
 
-  console.log('Processing task: ' + task);
   var random = randomIntFromInterval(1, 30);
   if (random === 1) {
     console.log('FAKE SHUTDOWN when processing random ' + random);

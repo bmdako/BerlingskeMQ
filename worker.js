@@ -31,10 +31,11 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
+
 var eventEmitter = require('events').EventEmitter,
     os = require('os'),
     fs = require('fs'),
-    ee = new eventEmitter,
+    workerEmitter = new eventEmitter,
     handlerEmitter = new eventEmitter,
     redis = require("redis"),
     work_queue = 'work',
@@ -44,9 +45,11 @@ var eventEmitter = require('events').EventEmitter,
     exiting = false,
     canExit = true;
 
+
 var client = process.env.REDIS_PORT && process.env.REDIS_HOST ?
     redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST) :
     redis.createClient();
+
 
 process.on('SIGINT', function() {
   if (exiting || canExit) process.exit(0); // If pressed twice.
@@ -54,12 +57,7 @@ process.on('SIGINT', function() {
   exiting = true;
 });
 
-ee.on('task_found', processTask);
-ee.on('task_processed', removeTask);
-ee.on('task_finished', nextTask);
-ee.on('task_skipped', pushTask);
-
-
+// Setting up all the handlers
 var walk = function (path) {
   fs.readdirSync(path).forEach(function(file) {
     var fullPath = path + '/' + file;
@@ -72,8 +70,18 @@ var walk = function (path) {
 walk(__dirname + '/handlers');
 
 
+// Setting up the worker logic
+workerEmitter.on('start', nextTask);
+workerEmitter.on('task_found', processTask);
+workerEmitter.on('task_processed', removeTask);
+workerEmitter.on('task_finished', nextTask);
+workerEmitter.on('task_skipped', pushTask);
+
+
+
 console.log('Starting worker ' + processing_queue);
-nextTask(); // Start
+workerEmitter.emit('start'); // Start
+
 
 
 function nextTask () {
@@ -81,7 +89,7 @@ function nextTask () {
     if ( tasks.length > 0 ) {
       canExit = false;
       console.log('Resumed task: ' + tasks[0]);
-      ee.emit('task_found', tasks[0]);
+      workerEmitter.emit('task_found', tasks[0]);
     } else if (exiting) {
       console.log('Exiting.')
       process.exit(0);
@@ -92,7 +100,7 @@ function nextTask () {
         canExit = false;
         if (task) { // In case timeout is set to a value
           console.log('Picked task: ' + task);
-          ee.emit('task_found', task);
+          workerEmitter.emit('task_found', task);
         }
       });
     }
@@ -112,11 +120,11 @@ function processTask (task) {
     handlerEmitter.emit(task_handle_event, task, function () {
       ++completedHandlersCount;
       if (completedHandlersCount === activeHandlersCount) {
-        ee.emit('task_processed', task);
+        workerEmitter.emit('task_processed', task);
       }
     });
   } else {
-    ee.emit('task_skipped', task);
+    workerEmitter.emit('task_skipped', task);
   }
 }
 
@@ -126,7 +134,7 @@ function pushTask (task) {
       throw new Error('Error when LREM from processing_queue ' + processing_queue + ': ' + err);
     } else {
       console.log('Skipped task: ' + task);
-      ee.emit('task_processed', task);
+      workerEmitter.emit('task_processed', task);
     }
   });
 }
@@ -141,7 +149,7 @@ function removeTask (task) {
       throw new Error('Error when LREM from processing_queue ' + processing_queue + ': ' + err);
     } else {
       console.log('Finished task: ' + task);
-      ee.emit('task_finished');
+      workerEmitter.emit('task_finished');
     }
   });
 }
