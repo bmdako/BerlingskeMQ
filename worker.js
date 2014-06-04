@@ -50,7 +50,7 @@ var client = process.env.REDIS_PORT && process.env.REDIS_HOST ?
 
 process.on('SIGINT', function() {
   if (exiting || canExit) process.exit(0); // If pressed twice.
-  console.log('Received SIGINT.  Please wait until the current task is finished.');
+  console.log('Received SIGINT.  Please wait until the current task is finished. Or one more to force exit.');
   exiting = true;
 });
 
