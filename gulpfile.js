@@ -3,16 +3,7 @@ var jshint = require('gulp-jshint');
 var spawn = require('child_process').spawn;
 var os = require('os');
 
-gulp.task('default', function () {
-  console.log('=================');
-  console.log('Usage:');
-  console.log('     gulp start');
-  console.log('     gulp watch');
-  console.log('     gulp lint');
-  console.log('     gulp test');
-  console.log('     gulp build');
-  console.log('=================');
-});
+gulp.task('default', ['watch']);
 
 var workerid = os.hostname() + '-test';
 
